@@ -42,3 +42,13 @@ Stop the container with `Ctrl + C`.
 
 - Python 3.12 (slim)
 - Docker Desktop on Apple Silicon (M1)
+
+## Design decisions
+
+**1. Why `python:3.12-slim` as the base image?** Smaller attack surface and faster pulls than `python:3.12`. Would consider alpine or distroless for production.
+
+**2. Why `0.0.0.0` instead of `127.0.0.1`?** Inside a container, binding to `127.0.0.1` only listens on loopback — Docker's forwarded traffic arrives on `eth0` and would be refused. `0.0.0.0` is correct for containers; the security boundary is the port-publishing rule, not the bind address.
+
+**3. Why does `EXPOSE` appear in the Dockerfile?** Documentation for humans reading the Dockerfile. The actual port publishing happens at `docker run -p` time. `EXPOSE` does nothing to networking.
+
+**4. What I'd improve with more time:** Pin the base image to a sha256 digest instead of a tag (supply chain security), add a non-root `USER` directive (least privilege), add a `HEALTHCHECK` instruction, scan the image with Trivy in CI, and use a multi-stage build.
