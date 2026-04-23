@@ -51,4 +51,8 @@ Stop the container with `Ctrl + C`.
 
 **3. Why does `EXPOSE` appear in the Dockerfile?** Documentation for humans reading the Dockerfile. The actual port publishing happens at `docker run -p` time. `EXPOSE` does nothing to networking.
 
-**4. What I'd improve with more time:** Pin the base image to a sha256 digest instead of a tag (supply chain security), add a non-root `USER` directive (least privilege), add a `HEALTHCHECK` instruction, scan the image with Trivy in CI, and use a multi-stage build.
+**4. Why pin the base image to a sha256 digest?** Tags like `python:3.12-slim` are mutable — the image they point to can change at any time. A sha256 digest is a cryptographic fingerprint of the exact image bytes, so every build is guaranteed to use the same image. This prevents unexpected upstream changes and supply chain attacks.
+
+**5. Why run as a non-root user?** By default, container processes run as root. If an attacker exploits the app, they land as root inside the container. Creating an unprivileged user (`appuser`) and switching to it with `USER` limits the blast radius of any compromise.
+
+**6. Why add a HEALTHCHECK?** Docker can't tell if your app is actually working — only that the process is running. The `HEALTHCHECK` runs a real HTTP request every 30 seconds. If it fails three times, Docker marks the container unhealthy, allowing orchestrators (ECS, Kubernetes) to restart it automatically.

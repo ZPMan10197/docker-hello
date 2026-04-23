@@ -21,17 +21,17 @@ curl http://localhost:8000
 
 ## Architecture
 
-The entire application is a single file (`app.py`) using Python's stdlib `http.server`. There are no dependencies, no package manager files, and no test suite. The Dockerfile uses `python:3.12-slim` as the base image.
+The entire application is a single file (`app.py`) using Python's stdlib `http.server`. There are no dependencies, no package manager files, and no test suite.
 
-## Intended next steps (from README)
+The Dockerfile runs the app as an unprivileged `appuser` (not root), includes a `HEALTHCHECK` via `urllib.request`, and pins the base image to a sha256 digest for reproducible builds.
 
-- Add Docker Compose with a Redis backend service
-- Scan image for CVEs with Trivy
+## Intended next steps
+
+- GitHub Actions CI pipeline: build → Trivy CVE scan → fail on critical vulnerabilities
+- Docker Compose with a Redis backend service
 - Push to AWS ECR and run on ECS Fargate
 
 ## Hardening notes (for future work)
 
-- Pin base image to a `sha256` digest instead of a floating tag
-- Add a non-root `USER` directive
-- Add a `HEALTHCHECK` instruction
 - Use a multi-stage build
+- Switch to distroless or Alpine base image for smaller attack surface
