@@ -25,9 +25,10 @@ The entire application is a single file (`app.py`) using Python's stdlib `http.s
 
 The Dockerfile runs the app as an unprivileged `appuser` (not root), includes a `HEALTHCHECK` via `urllib.request`, and pins the base image to a sha256 digest for reproducible builds.
 
+A GitHub Actions pipeline (`.github/workflows/ci.yml`) runs on every push to `main`: builds the image, then scans it with Trivy — failing the build on CRITICAL or HIGH CVEs with no available fix ignored.
+
 ## Intended next steps
 
-- GitHub Actions CI pipeline: build → Trivy CVE scan → fail on critical vulnerabilities
 - Docker Compose with a Redis backend service
 - Push to AWS ECR and run on ECS Fargate
 

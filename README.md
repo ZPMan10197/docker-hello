@@ -1,5 +1,7 @@
 # docker-hello
 
+![CI](https://github.com/ZPMan10197/docker-hello/actions/workflows/ci.yml/badge.svg)
+
 My first Docker project. A minimal Python HTTP server packaged as a container, built as the first step in my cloud security engineering portfolio.
 
 ## What it does
@@ -31,11 +33,12 @@ Stop the container with `Ctrl + C`.
 - **`EXPOSE` is documentation only** — the actual port publishing happens at `docker run` time, not in the Dockerfile.
 - **Binding to `0.0.0.0` inside the container** — required so the server accepts traffic routed in via Docker's port forward. Binding to `127.0.0.1` would make it unreachable from outside the container.
 - **Containers ship their own runtime** — the Python interpreter running my code lives inside the container, not on my Mac. This is what makes containers portable across environments.
+- **CI/CD pipelines** — GitHub Actions spins up a fresh Ubuntu runner on every push, builds the image, and runs Trivy to scan for CVEs. If a critical vulnerability is found, the build fails automatically before anything ships.
+- **CVE scanning** — Trivy checks every package in the image against a database of known vulnerabilities. Pinning to `ignore-unfixed: true` avoids noise from vulnerabilities with no available patch.
 
 ## Next steps
 
 - Add Docker Compose with a second service (e.g., Redis backend)
-- Scan the image for CVEs with Trivy
 - Push to AWS ECR and run it on ECS Fargate
 
 ## Stack
@@ -56,3 +59,5 @@ Stop the container with `Ctrl + C`.
 **5. Why run as a non-root user?** By default, container processes run as root. If an attacker exploits the app, they land as root inside the container. Creating an unprivileged user (`appuser`) and switching to it with `USER` limits the blast radius of any compromise.
 
 **6. Why add a HEALTHCHECK?** Docker can't tell if your app is actually working — only that the process is running. The `HEALTHCHECK` runs a real HTTP request every 30 seconds. If it fails three times, Docker marks the container unhealthy, allowing orchestrators (ECS, Kubernetes) to restart it automatically.
+
+**7. Why use Trivy in CI and not just locally?** Running a scan locally is easy to forget or skip. Putting it in the pipeline makes it automatic and mandatory — every push is scanned, no exceptions. This is the "shift left" security principle: catch vulnerabilities at build time before they ever reach production.
