@@ -6,13 +6,12 @@ My first Docker project. A minimal Python HTTP server packaged as a container, b
 
 ## What it does
 
-Runs a Python HTTP server on port 8000 inside a container. When you hit it, it responds with the container's hostname — showing that each container gets its own isolated identity.
+Runs a Python HTTP server and a Redis instance together via Docker Compose. When you hit the server, it responds with the container hostname and a persistent visit counter stored in Redis.
 
 ## Run it
 
 ```bash
-docker build -t hello-zeshawn .
-docker run -p 8000:8000 hello-zeshawn
+docker compose up --build
 ```
 
 Then in another terminal:
@@ -23,7 +22,7 @@ curl http://localhost:8000
 
 Or open `http://localhost:8000` in a browser.
 
-Stop the container with `Ctrl + C`.
+Stop with `Ctrl + C`, then `docker compose down` to remove the containers.
 
 ## What I learned
 
@@ -35,15 +34,18 @@ Stop the container with `Ctrl + C`.
 - **Containers ship their own runtime** — the Python interpreter running my code lives inside the container, not on my Mac. This is what makes containers portable across environments.
 - **CI/CD pipelines** — GitHub Actions spins up a fresh Ubuntu runner on every push, builds the image, and runs Trivy to scan for CVEs. If a critical vulnerability is found, the build fails automatically before anything ships.
 - **CVE scanning** — Trivy checks every package in the image against a database of known vulnerabilities. Pinning to `ignore-unfixed: true` avoids noise from vulnerabilities with no available patch.
+- **Multi-container networking** — Docker Compose puts services on a shared private network. Containers find each other by service name (e.g. `redis`), not by IP. Docker's internal DNS resolves the name automatically.
+- **Stateless app, stateful data store** — the Python server holds no state itself. The visit counter lives in Redis. Restarting the app container doesn't reset the count because the data is in a separate container.
 
 ## Next steps
 
-- Add Docker Compose with a second service (e.g., Redis backend)
-- Push to AWS ECR and run it on ECS Fargate
+- Push to AWS ECR and run on ECS Fargate
 
 ## Stack
 
 - Python 3.12 (slim)
+- Redis 7 (Alpine)
+- Docker Compose
 - Docker Desktop on Apple Silicon (M1)
 
 ## Design decisions
@@ -61,3 +63,5 @@ Stop the container with `Ctrl + C`.
 **6. Why add a HEALTHCHECK?** Docker can't tell if your app is actually working — only that the process is running. The `HEALTHCHECK` runs a real HTTP request every 30 seconds. If it fails three times, Docker marks the container unhealthy, allowing orchestrators (ECS, Kubernetes) to restart it automatically.
 
 **7. Why use Trivy in CI and not just locally?** Running a scan locally is easy to forget or skip. Putting it in the pipeline makes it automatic and mandatory — every push is scanned, no exceptions. This is the "shift left" security principle: catch vulnerabilities at build time before they ever reach production.
+
+**8. Why is Redis a separate container and not just a Python library?** `import redis` is the client — the code that knows how to talk to Redis. Redis the database is a separate program that has to run somewhere. Keeping it in its own container matches how production systems work: stateless app layer, separate data layer. This also means you can restart the app without losing data.
