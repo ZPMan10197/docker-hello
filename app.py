@@ -6,6 +6,12 @@ r = redis.Redis(host="redis", port=6379)
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/health":
+            self.send_response(200)
+            self.send_header("Content-type", "text/plain")
+            self.end_headers()
+            self.wfile.write(b"ok\n")
+            return
         count = r.incr("visits")
         self.send_response(200)
         self.send_header("Content-type", "text/plain")
