@@ -16,9 +16,7 @@ jobs:
           fetch-depth: 0
 
       - name: Scan for secrets with Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: docker run --rm -v "${{ github.workspace }}:/path" zricethezav/gitleaks:latest detect --source /path --exit-code 1
 
       - name: Build Docker image
         run: docker build -t hello-zeshawn:${{ github.sha }} .
