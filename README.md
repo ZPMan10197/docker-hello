@@ -56,22 +56,22 @@ Stop with `Ctrl + C`, then `docker compose down` to remove the containers.
 
 ## Design decisions
 
-**1. Why `python:3.12-slim` as the base image?** Smaller attack surface and faster pulls than `python:3.12`. Would consider alpine or distroless for production.
+**Why `python:3.12-slim` as the base image?** Smaller attack surface and faster pulls than `python:3.12`. Would consider alpine or distroless for production.
 
-**2. Why `0.0.0.0` instead of `127.0.0.1`?** Inside a container, binding to `127.0.0.1` only listens on loopback — Docker's forwarded traffic arrives on `eth0` and would be refused. `0.0.0.0` is correct for containers; the security boundary is the port-publishing rule, not the bind address.
+**Why `0.0.0.0` instead of `127.0.0.1`?** Inside a container, binding to `127.0.0.1` only listens on loopback — Docker's forwarded traffic arrives on `eth0` and would be refused. `0.0.0.0` is correct for containers; the security boundary is the port-publishing rule, not the bind address.
 
-**3. Why does `EXPOSE` appear in the Dockerfile?** Documentation for humans reading the Dockerfile. The actual port publishing happens at `docker run -p` time. `EXPOSE` does nothing to networking.
+**Why does `EXPOSE` appear in the Dockerfile?** Documentation for humans reading the Dockerfile. The actual port publishing happens via the `ports` key in `docker-compose.yml`. `EXPOSE` does nothing to networking.
 
-**4. Why pin the base image to a sha256 digest?** Tags like `python:3.12-slim` are mutable — the image they point to can change at any time. A sha256 digest is a cryptographic fingerprint of the exact image bytes, so every build is guaranteed to use the same image. This prevents unexpected upstream changes and supply chain attacks.
+**Why pin the base image to a sha256 digest?** Tags like `python:3.12-slim` are mutable — the image they point to can change at any time. A sha256 digest is a cryptographic fingerprint of the exact image bytes, so every build is guaranteed to use the same image. This prevents unexpected upstream changes and supply chain attacks.
 
-**5. Why run as a non-root user?** By default, container processes run as root. If an attacker exploits the app, they land as root inside the container. Creating an unprivileged user (`appuser`) and switching to it with `USER` limits the blast radius of any compromise.
+**Why run as a non-root user?** By default, container processes run as root. If an attacker exploits the app, they land as root inside the container. Creating an unprivileged user (`appuser`) and switching to it with `USER` limits the blast radius of any compromise.
 
-**6. Why add a HEALTHCHECK?** Docker can't tell if your app is actually working — only that the process is running. The `HEALTHCHECK` runs a real HTTP request every 30 seconds. If it fails three times, Docker marks the container unhealthy, allowing orchestrators (ECS, Kubernetes) to restart it automatically.
+**Why add a HEALTHCHECK?** Docker can't tell if your app is actually working — only that the process is running. The `HEALTHCHECK` runs a real HTTP request every 30 seconds. If it fails three times, Docker marks the container unhealthy, allowing orchestrators (ECS, Kubernetes) to restart it automatically.
 
-**7. Why use Trivy in CI and not just locally?** Running a scan locally is easy to forget or skip. Putting it in the pipeline makes it automatic and mandatory — every push is scanned, no exceptions. This is the "shift left" security principle: catch vulnerabilities at build time before they ever reach production.
+**Why use Trivy in CI and not just locally?** Running a scan locally is easy to forget or skip. Putting it in the pipeline makes it automatic and mandatory — every push is scanned, no exceptions. This is the "shift left" security principle: catch vulnerabilities at build time before they ever reach production.
 
-**9. Why run `apt-get upgrade` in the Dockerfile?** The base image (`python:3.12-slim`) is rebuilt by its maintainers periodically, but not always immediately after Debian patches land. Running `apt-get upgrade` at build time pulls in any available fixes that haven't made it into the base image yet. `rm -rf /var/lib/apt/lists/*` cleans up the package index cache so it doesn't bloat the image layer.
+**Why run `apt-get upgrade` in the Dockerfile?** The base image (`python:3.12-slim`) is rebuilt by its maintainers periodically, but not always immediately after Debian patches land. Running `apt-get upgrade` at build time pulls in any available fixes that haven't made it into the base image yet. `rm -rf /var/lib/apt/lists/*` cleans up the package index cache so it doesn't bloat the image layer.
 
-**10. Why add Gitleaks secret scanning?** Accidentally committed credentials are one of the most common causes of cloud breaches — an AWS key in a public repo can be found and abused within minutes. Gitleaks scans the full git history (not just the latest commit) on every push, so even a secret committed and "deleted" in a later commit gets caught. Running it first in the pipeline means it fails fast before wasting time on a build.
+**Why add Gitleaks secret scanning?** Accidentally committed credentials are one of the most common causes of cloud breaches — an AWS key in a public repo can be found and abused within minutes. Gitleaks scans the full git history (not just the latest commit) on every push, so even a secret committed and "deleted" in a later commit gets caught. Running it first in the pipeline means it fails fast before wasting time on a build.
 
-**8. Why is Redis a separate container and not just a Python library?** `import redis` is the client — the code that knows how to talk to Redis. Redis the database is a separate program that has to run somewhere. Keeping it in its own container matches how production systems work: stateless app layer, separate data layer. This also means you can restart the app without losing data.
+**Why is Redis a separate container and not just a Python library?** `import redis` is the client — the code that knows how to talk to Redis. Redis the database is a separate program that has to run somewhere. Keeping it in its own container matches how production systems work: stateless app layer, separate data layer. This also means you can restart the app without losing data.
