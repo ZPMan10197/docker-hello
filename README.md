@@ -40,7 +40,12 @@ Stop with `Ctrl + C`, then `docker compose down` to remove the containers.
 
 ## Next steps
 
-- Push to AWS ECR and run on ECS Fargate
+- Refactor Redis connection to use environment variables (currently hardcoded for Compose)
+- Add unit tests + run them in CI before the build step
+- Add image signing with Cosign + verify signatures in the workflow
+- Push to AWS ECR and deploy on ECS Fargate
+- Codify the AWS infrastructure as Terraform
+- Add CloudWatch logging + a GuardDuty alert for suspicious behavior
 
 ## Stack
 
