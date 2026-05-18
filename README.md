@@ -28,8 +28,8 @@ Stop with `Ctrl + C`, then `docker compose down` to remove the containers.
 
 - **Images vs containers** — an image is an immutable template; each `docker run` creates a fresh container instance. Same image, different hostnames on every run.
 - **Dockerfile basics** — `FROM` sets the base image, `WORKDIR` sets the in-container working directory, `COPY` bakes files into the image at build time, `CMD` defines the default startup command.
-- **Port mapping** — `-p HOST:CONTAINER` forwards traffic from a port on the host to a port inside the container. Without it, the server inside is unreachable from outside.
-- **`EXPOSE` is documentation only** — the actual port publishing happens at `docker run` time, not in the Dockerfile.
+- **Port mapping** — in `docker-compose.yml`, the `ports` key maps `HOST:CONTAINER` and publishes the port automatically when you run `docker compose up`. Without it, the server inside is unreachable from outside.
+- **`EXPOSE` is documentation only** — the actual port publishing happens via the `ports` key in `docker-compose.yml`, not from `EXPOSE` in the Dockerfile.
 - **Binding to `0.0.0.0` inside the container** — required so the server accepts traffic routed in via Docker's port forward. Binding to `127.0.0.1` would make it unreachable from outside the container.
 - **Containers ship their own runtime** — the Python interpreter running my code lives inside the container, not on my Mac. This is what makes containers portable across environments.
 - **CI/CD pipelines** — GitHub Actions spins up a fresh Ubuntu runner on every push, builds the image, and runs Trivy to scan for CVEs. If a critical vulnerability is found, the build fails automatically before anything ships.
