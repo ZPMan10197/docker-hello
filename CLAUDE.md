@@ -25,7 +25,7 @@ docker compose down
 
 The Dockerfile installs dependencies via `requirements.txt`, runs the app as an unprivileged `appuser`, includes a `HEALTHCHECK` via `urllib.request`, and pins the base image to a sha256 digest.
 
-A GitHub Actions pipeline (`.github/workflows/ci.yml`) runs on every push to `main`: builds the image, then scans it with Trivy — failing on CRITICAL or HIGH CVEs with no available fix ignored.
+A GitHub Actions pipeline (`.github/workflows/ci.yml`) runs on every push to `main`: scans the full git history for secrets with Gitleaks, builds the image, then scans it with Trivy — failing on CRITICAL or HIGH CVEs with no available fix ignored.
 
 ## Intended next steps
 

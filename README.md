@@ -33,6 +33,7 @@ Stop with `Ctrl + C`, then `docker compose down` to remove the containers.
 - **Binding to `0.0.0.0` inside the container** — required so the server accepts traffic routed in via Docker's port forward. Binding to `127.0.0.1` would make it unreachable from outside the container.
 - **Containers ship their own runtime** — the Python interpreter running my code lives inside the container, not on my Mac. This is what makes containers portable across environments.
 - **CI/CD pipelines** — GitHub Actions spins up a fresh Ubuntu runner on every push, builds the image, and runs Trivy to scan for CVEs. If a critical vulnerability is found, the build fails automatically before anything ships.
+- **Secret scanning** — Gitleaks scans the full git history on every push for accidentally committed credentials (API keys, tokens, passwords). It runs before the Docker build so a leaked secret fails the pipeline immediately.
 - **CVE scanning** — Trivy checks every package in the image against a database of known vulnerabilities. Pinning to `ignore-unfixed: true` avoids noise from vulnerabilities with no available patch.
 - **Multi-container networking** — Docker Compose puts services on a shared private network. Containers find each other by service name (e.g. `redis`), not by IP. Docker's internal DNS resolves the name automatically.
 - **Stateless app, stateful data store** — the Python server holds no state itself. The visit counter lives in Redis. Restarting the app container doesn't reset the count because the data is in a separate container.
@@ -63,5 +64,7 @@ Stop with `Ctrl + C`, then `docker compose down` to remove the containers.
 **6. Why add a HEALTHCHECK?** Docker can't tell if your app is actually working — only that the process is running. The `HEALTHCHECK` runs a real HTTP request every 30 seconds. If it fails three times, Docker marks the container unhealthy, allowing orchestrators (ECS, Kubernetes) to restart it automatically.
 
 **7. Why use Trivy in CI and not just locally?** Running a scan locally is easy to forget or skip. Putting it in the pipeline makes it automatic and mandatory — every push is scanned, no exceptions. This is the "shift left" security principle: catch vulnerabilities at build time before they ever reach production.
+
+**9. Why add Gitleaks secret scanning?** Accidentally committed credentials are one of the most common causes of cloud breaches — an AWS key in a public repo can be found and abused within minutes. Gitleaks scans the full git history (not just the latest commit) on every push, so even a secret committed and "deleted" in a later commit gets caught. Running it first in the pipeline means it fails fast before wasting time on a build.
 
 **8. Why is Redis a separate container and not just a Python library?** `import redis` is the client — the code that knows how to talk to Redis. Redis the database is a separate program that has to run somewhere. Keeping it in its own container matches how production systems work: stateless app layer, separate data layer. This also means you can restart the app without losing data.
