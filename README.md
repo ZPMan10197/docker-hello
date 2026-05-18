@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ZPMan10197/docker-hello/actions/workflows/ci.yml/badge.svg)](https://github.com/ZPMan10197/docker-hello/actions/workflows/ci.yml)
 
-My first Docker project. A minimal Python HTTP server packaged as a container, built as the first step in my cloud security engineering portfolio.
+My first Docker project. A minimal Python HTTP server packaged as a container, built as the first step in my cloud security engineering portfolio. I used Claude Code as a pair programmer throughout; all design decisions are mine.
 
 ## What it does
 
